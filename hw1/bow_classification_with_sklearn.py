@@ -98,6 +98,12 @@ def _get_example_of_errors(texts_to_analyze, preds_to_analyze, labels_to_analyze
     for line in wrong[:5]:
         print("\t- {}".format(line))
 
+def lowerFront(match):
+    return match.group().lower()
+
+
+def upperFront(match):
+    return match.group().upper()
 
 def preprocess_and_split_to_tokens(sentences: ArrayLike) -> ArrayLike:
     """
@@ -109,7 +115,34 @@ def preprocess_and_split_to_tokens(sentences: ArrayLike) -> ArrayLike:
     :return: ArrayLike objects of ArrayLike objects of tokens.
         e.g., [["I", "like", "apples"], ["I", "love", "python3"]]
     """
-    raise NotImplementedError
+    tokens_per_sentence = []
+    for s in sentences:
+        # print(f'sentence:\n{s}')
+        s = s+" "
+        frontCap = re.compile(r'[A-Z][^\sA-Z]*')
+        s = frontCap.sub(lowerFront, s)
+        s = re.sub(r'[.,?!;]\s', ' ', s)
+        s = re.sub(r'[()"]', '', s)
+        s = re.sub(r"\s'", ' ', s)
+        s = re.sub(r"'\s", ' ', s)
+        s = re.sub(r"<br />", ' ', s)
+        s = re.sub(r"/", ' ', s)
+        # print(f'before:\n{s}')
+        s = re.sub(r"'s", " 's", s)
+        # print(f'{s}')
+        # print(f'after:\n{s}')
+        
+
+        tokens = s.split()
+        # print(tokens)
+        tokens_per_sentence.append(tokens)
+# ...
+# >>> p = re.compile(r'\d+')
+# >>> p.sub(hexrepl, 'Call 65490 for printing, 49152 for user code.')
+# 'Call 0xffd2 for printing, 0xc000 for user code.'
+
+
+    return tokens_per_sentence
 
 
 def create_bow(sentences: ArrayLike, vocab: Dict[str, int] = None,
@@ -128,13 +161,30 @@ def create_bow(sentences: ArrayLike, vocab: Dict[str, int] = None,
                 [[1, 1, 1, 0, 0], [1, 0, 0, 1, 1]])
     """
     tokens_per_sentence = preprocess_and_split_to_tokens(sentences)
+    # print(f'tokens per sentence:\n {tokens_per_sentence}')
 
     if vocab is None:
         print("{} Vocab construction".format(msg_prefix))
-        raise NotImplementedError
+        vocab = dict()
+        for tokens in tokens_per_sentence:
+            for w in tokens:
+                if w not in vocab.keys():
+                    vocab[w] = len(vocab)
+                    # print(f'{w} : {vocab[w]}')
+    print(f'\n\nvocab:\n{vocab}\n')
+    # print(f'vocab size: {len(vocab)}')
+    bow_array = []
+    for tokens in tokens_per_sentence:
+        bow = []
+        for v in vocab.keys():
+            bow.append(tokens.count(v))
+        bow_array.append(bow)
+    # print(f'bow:\n{bow}\n')
+    # print(f'bow size: {len(bow_array[0])}')
+    # print(f'bow_array size: {len(bow_array)}')
 
     print("{} Bow construction".format(msg_prefix))
-    raise NotImplementedError
+    return vocab, bow_array
 
 
 def run(test_xs=None, test_ys=None, num_samples=10000, verbose=True):
