@@ -5,6 +5,7 @@ import sys
 import os
 import argparse
 from typing import Dict, Tuple, Union
+import time
 
 import numpy as np
 from tqdm import tqdm
@@ -132,8 +133,8 @@ def preprocess_and_split_to_tokens(sentences: ArrayLike) -> ArrayLike:
         # print(f'{s}')
         # print(f'after:\n{s}')
         
-
         tokens = s.split()
+        # tokens = np.array(s.split())
         # print(tokens)
         tokens_per_sentence.append(tokens)
 # ...
@@ -161,35 +162,88 @@ def create_bow(sentences: ArrayLike, vocab: Dict[str, int] = None,
                 [[1, 1, 1, 0, 0], [1, 0, 0, 1, 1]])
     """
     tokens_per_sentence = preprocess_and_split_to_tokens(sentences)
-    # print(f'tokens per sentence:\n {tokens_per_sentence}')
+
+    tokens_flatten = [item for sublist in tokens_per_sentence for item in sublist]     #flatten the list
+    
+    tokens_flatten = set(tokens_flatten)  #Remove duplicates
+    
 
     if vocab is None:
         print("{} Vocab construction".format(msg_prefix))
-        vocab = dict()
-        for tokens in tokens_per_sentence:
-            for w in tokens:
-                if w not in vocab.keys():
-                    vocab[w] = len(vocab)
-                    # print(f'{w} : {vocab[w]}')
-    print(f'\n\nvocab:\n{vocab}\n')
-    # print(f'vocab size: {len(vocab)}')
-    bow_array = []
-    for tokens in tokens_per_sentence:
-        bow = []
-        for v in vocab.keys():
-            bow.append(tokens.count(v))
-        bow_array.append(bow)
+
+        #ver1
+        vocab = {k: v for v, k in enumerate(tokens_flatten)}
+
+        #ver0
+        # vocab = dict()
+        # for tokens in tokens_per_sentence:
+        #     for w in tokens:
+        #         if w not in vocab.keys():
+        #             vocab[w] = len(vocab)
+
+    print(f'vocab length: {len(vocab)}')
+
+    print("{} Bow construction".format(msg_prefix))
+
+    bow_array = np.zeros((len(tokens_per_sentence), len(vocab)))
+    for i in tqdm(range(len(tokens_per_sentence))):
+        # bow = []
+        tokens = tokens_per_sentence[i]
+        for token in tokens:
+            if vocab.get(token):
+                bow_array[i, vocab[token]] += 1
+        # bow_array[i,vocab[v]] = np.count_nonzero(tokens==v)
+
+    # bow_array = np.zeros((len(tokens_per_sentence), len(vocab)))
+    # i = 0
+    # for tokens in tqdm(tokens_per_sentence):
+    #     # bow = []
+    #     # tokens = tokens_per_sentence[i]
+    #     for v in vocab.keys():
+    #         bow_array[i,vocab[v]] = np.count_nonzero(tokens==v)
+    #     i+=1
+
+    #last ver
+    # bow_array = np.zeros((len(tokens_per_sentence), len(vocab)))
+    # for i in tqdm(range(len(tokens_per_sentence))):
+    #     # bow = []
+    #     tokens = tokens_per_sentence[i]
+    #     for v in vocab.keys():
+    #         bow_array[i,vocab[v]] = np.count_nonzero(tokens==v)
+
+    # bow_array = np.zeros((len(tokens_per_sentence), len(vocab)))
+    # for i in tqdm(range(len(tokens_per_sentence))):
+    #     # bow = []
+    #     tokens = tokens_per_sentence[i]
+    #     for j in tqdm(range(len(vocab.keys()))):
+    #         bow_array[i,j] = np.count_nonzero(tokens==list(vocab.keys())[j])
+
+    # bow_array = []
+    # for tokens in tqdm(tokens_per_sentence):
+    #     bow = []
+    #     for v in vocab.keys():
+    #         bow.append(np.count_nonzero(tokens==v))
+    #     bow_array.append(bow)
+
+    #ver0
+    # bow_array = []
+    # for tokens in tqdm(tokens_per_sentence):
+    #     bow = []
+    #     for v in vocab.keys():
+    #         bow.append(tokens.count(v))
+    #     bow_array.append(bow)
+
     # print(f'bow:\n{bow}\n')
     # print(f'bow size: {len(bow_array[0])}')
     # print(f'bow_array size: {len(bow_array)}')
 
-    print("{} Bow construction".format(msg_prefix))
+    
     return vocab, bow_array
 
 
 def run(test_xs=None, test_ys=None, num_samples=10000, verbose=True):
     """You do not have to consider test_xs and test_ys, since they will be used for grading only."""
-
+    start_time = time.time()
     # Data
     (train_xs, train_ys), (val_xs, val_ys) = _get_review_data(path="../data/review_10k.csv", num_samples=num_samples)
     if verbose:
@@ -219,6 +273,10 @@ def run(test_xs=None, test_ys=None, num_samples=10000, verbose=True):
         print("\n[Validation] Accuracy: {}".format(val_accuracy))
         _get_example_of_errors(val_xs, val_preds, val_ys)
 
+    
+    end_time = time.time()
+    print(f'running time: {(end_time-start_time)/60} min')
+
     # Grading: Do not modify below lines.
     if test_xs is not None:
         _, test_bows = create_bow(test_xs, vocab=my_vocab, msg_prefix="\n[Test]")
@@ -234,7 +292,7 @@ if __name__ == '__main__':
     parser.add_argument("--num-samples", default=10000, type=int)
     parser.add_argument("--verbose", default=True, type=bool)
     args = parser.parse_args()
-
+    
     run(
         num_samples=args.num_samples,
         verbose=args.verbose,
