@@ -118,7 +118,7 @@ def preprocess_and_split_to_tokens(sentences: ArrayLike) -> ArrayLike:
     """
     tokens_per_sentence = []
     for s in sentences:
-        # print(f'sentence:\n{s}')
+        # print(f'{s}')
         s = s+" "
         frontCap = re.compile(r'[A-Z][^\sA-Z]*')
         s = frontCap.sub(lowerFront, s)
@@ -128,9 +128,15 @@ def preprocess_and_split_to_tokens(sentences: ArrayLike) -> ArrayLike:
         s = re.sub(r"'\s", ' ', s)
         s = re.sub(r"<br />", ' ', s)
         s = re.sub(r"/", ' ', s)
-        # print(f'before:\n{s}')
         s = re.sub(r"'s", " 's", s)
-        # print(f'{s}')
+        # print(f'before:\n{s}')
+        s = re.sub(r"'m", " 'm", s)
+        s = re.sub(r"'ve", " 've", s)
+        s = re.sub(r"'d", " 'd", s)
+        s = re.sub(r"n't", " n't", s)
+        s = re.sub(r"ca n't", "can not", s)
+        s = re.sub(r" n't", " not", s)
+        print(f'{s}')
         # print(f'after:\n{s}')
         
         tokens = s.split()
@@ -275,7 +281,7 @@ def run(test_xs=None, test_ys=None, num_samples=10000, verbose=True):
 
     
     end_time = time.time()
-    print(f'running time: {(end_time-start_time)/60} min')
+    print(f'running time: {(end_time-start_time)} sec')
 
     # Grading: Do not modify below lines.
     if test_xs is not None:
